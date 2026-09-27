@@ -32,8 +32,9 @@ jobs:
           pip install --upgrade pip
           pip install maturin[patchelf]
 
-      - name: Patch Cargo.toml
+      - name: Patch Cargo.toml and Remove Lockfile
         run: |
+          rm -f Cargo.lock
           python3 -c '
           with open("Cargo.toml", "r", encoding="utf-8") as f: d = f.read()
           d = d.replace("\"abi3-py39\"", "")
