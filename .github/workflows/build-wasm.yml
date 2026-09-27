@@ -30,7 +30,6 @@ jobs:
       - name: Install build tools
         run: |
           pip install --upgrade pip
-          pip install "wheel<0.40.0"
           pip install maturin[patchelf]
 
       - name: Patch Cargo.toml
