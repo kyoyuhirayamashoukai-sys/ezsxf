@@ -30,8 +30,7 @@ jobs:
       - name: Install build tools
         run: |
           pip install --upgrade pip
-          pip install wheel setuptools
-          pip install maturin[patchelf] pyodide-build
+          pip install maturin[patchelf]
 
       - name: Patch Cargo.toml
         run: |
@@ -44,9 +43,7 @@ jobs:
 
       - name: Build WASM Wheel
         run: |
-          pyodide build
-        env:
-          RUSTUP_TOOLCHAIN: stable
+          maturin build --release --target wasm32-unknown-emscripten --out dist -i python3.11
 
       - name: Upload Artifact
         if: always()
