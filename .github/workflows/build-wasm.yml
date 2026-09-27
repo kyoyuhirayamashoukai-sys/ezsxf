@@ -19,12 +19,12 @@ jobs:
       - name: Install emscripten
         uses: mymindstorm/setup-emsdk@v14
         with:
-          version: '3.1.58'
+          version: '3.1.45'
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: 'stable'
+          toolchain: '1.77.0'
           targets: wasm32-unknown-emscripten
 
       - name: Install build tools
@@ -34,10 +34,12 @@ jobs:
 
       - name: Patch Cargo.toml
         run: |
+          rm -f Cargo.lock
           python3 -c '
           with open("Cargo.toml", "r", encoding="utf-8") as f: d = f.read()
           d = d.replace("\"abi3-py39\"", "")
           d = d.replace(", ]", "]")
+          d = d.replace("encoding_rs = \"0.8\"", "encoding_rs = \"=0.8.33\"")
           with open("Cargo.toml", "w", encoding="utf-8") as f: f.write(d)
           '
 
