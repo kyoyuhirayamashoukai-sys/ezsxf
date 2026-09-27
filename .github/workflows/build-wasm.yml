@@ -20,16 +20,16 @@ jobs:
         uses: mymindstorm/setup-emsdk@v14
         with:
           version: '3.1.45'
-          actions-cache-folder: 'emsdk-cache'
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: wasm32-unknown-emscripten
 
-      - name: Install build tools
+      - name: Fix Wheel Bug (Downgrade wheel to stable version)
         run: |
           pip install --upgrade pip
+          pip install "wheel<0.40.0"
           pip install maturin[patchelf]
 
       - name: Patch Cargo.toml
