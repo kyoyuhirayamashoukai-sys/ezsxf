@@ -16,19 +16,29 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install emscripten (emsdk)
+      - name: Install emscripten
         uses: mymindstorm/setup-emsdk@v14
         with:
           version: '3.1.45'
+          actions-cache-folder: 'emsdk-cache'
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: wasm32-unknown-emscripten
 
-      - name: Install maturin and pyodide-build
+      - name: Install build tools
         run: |
           pip install maturin[patchelf] pyodide-build
+
+      - name: Patch Cargo.toml
+        run: |
+          python3 -c '
+          with open("Cargo.toml", "r", encoding="utf-8") as f: d = f.read()
+          d = d.replace("\"abi3-py39\"", "")
+          d = d.replace(", ]", "]")
+          with open("Cargo.toml", "w", encoding="utf-8") as f: f.write(d)
+          '
 
       - name: Build WASM Wheel
         run: |
@@ -37,6 +47,7 @@ jobs:
           RUSTUP_TOOLCHAIN: stable
 
       - name: Upload Artifact
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: ezsxf-wasm-wheel
