@@ -3,19 +3,27 @@ name: Build WASM (Pyodide)
 on:
   push:
     branches: [ main ]
-  workflow_dispatch:
+  workflow_dispatch:   # 手動実行用
 
 jobs:
   build-wasm:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
 
+      # -------------------------------------------------
+      # 1️⃣ Python（Pyodide が 3.12 なので同バージョン）をセット
+      # -------------------------------------------------
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
+      # -------------------------------------------------
+      # 2️⃣ Emscripten を公式リポジトリからクローンしてインストール
+      #    → 直接 Google の古い URL を参照しないので 404 が出ません
+      # -------------------------------------------------
       - name: Install emscripten (Official)
         run: |
           git clone https://github.com/emscripten-core/emsdk.git
@@ -25,17 +33,29 @@ jobs:
           echo "$PWD" >> $GITHUB_PATH
           echo "$PWD/upstream/emscripten" >> $GITHUB_PATH
 
+      # -------------------------------------------------
+      # 3️⃣ Rust（nightly）をインストール
+      #    -Z link-native-libraries が必要なため nightly を使用
+      # -------------------------------------------------
       - name: Setup Rust (nightly for -Z link-native-libraries)
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: 'nightly-2024-02-01'
           targets: wasm32-unknown-emscripten
 
+      # -------------------------------------------------
+      # 4️⃣ 必要な Python ライブラリをインストール
+      #    ezdxf, svgwrite, reportlab を追加しています
+      # -------------------------------------------------
       - name: Install build tools and Python dependencies
         run: |
           pip install --upgrade pip
           pip install maturin[patchelf] ezdxf svgwrite reportlab
 
+      # -------------------------------------------------
+      # 5️⃣ Cargo.toml のちょっとしたパッチ
+      #    - 古い abi3 フラグと encoding_rs のバージョンを調整
+      # -------------------------------------------------
       - name: Patch Cargo.toml (remove unused abi3 flag and fix encoding_rs version)
         run: |
           rm -f Cargo.lock
@@ -47,10 +67,16 @@ jobs:
           with open("Cargo.toml", "w", encoding="utf-8") as f: f.write(d)
           '
 
+      # -------------------------------------------------
+      # 6️⃣ WASM 用の wheel をビルド
+      # -------------------------------------------------
       - name: Build WASM Wheel
         run: |
           maturin build --release --target wasm32-unknown-emscripten --out dist -i python3.12
 
+      # -------------------------------------------------
+      # 7️⃣ 成果物（.whl）を Github Actions の Artifact にアップロード
+      # -------------------------------------------------
       - name: Upload Artifact
         if: always()
         uses: actions/upload-artifact@v4
