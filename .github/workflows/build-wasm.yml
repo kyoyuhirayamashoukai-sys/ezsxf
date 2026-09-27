@@ -22,11 +22,12 @@ jobs:
           version: '3.1.45'
 
       - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@master
         with:
+          toolchain: '1.77.0'
           targets: wasm32-unknown-emscripten
 
-      - name: Install build tools (Fix Wheel Bug)
+      - name: Install build tools
         run: |
           pip install --upgrade pip
           pip install "wheel<0.40.0"
@@ -42,7 +43,6 @@ jobs:
           '
 
       - name: Build WASM Wheel
-        # ⚠️ ここが maturin に変わっているのが成功の鍵です！
         run: |
           maturin build --release --target wasm32-unknown-emscripten --out dist -i python3.11
 
