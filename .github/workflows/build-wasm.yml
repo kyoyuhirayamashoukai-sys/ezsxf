@@ -1,0 +1,55 @@
+name: Build WASM (Pyodide)
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-wasm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install emscripten
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: '3.1.45'
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: '1.77.0'
+          targets: wasm32-unknown-emscripten
+
+      - name: Install build tools
+        run: |
+          pip install --upgrade pip
+          pip install maturin[patchelf]
+
+      - name: Patch Cargo.toml
+        run: |
+          rm -f Cargo.lock
+          python3 -c '
+          with open("Cargo.toml", "r", encoding="utf-8") as f: d = f.read()
+          d = d.replace("\"abi3-py39\"", "")
+          d = d.replace(", ]", "]")
+          d = d.replace("encoding_rs = \"0.8\"", "encoding_rs = \"=0.8.33\"")
+          with open("Cargo.toml", "w", encoding="utf-8") as f: f.write(d)
+          '
+
+      - name: Build WASM Wheel
+        run: |
+          maturin build --release --target wasm32-unknown-emscripten --out dist -i python3.11
+
+      - name: Upload Artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ezsxf-wasm-wheel
+          path: dist/*.whl
